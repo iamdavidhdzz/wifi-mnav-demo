@@ -105,6 +105,86 @@ st.markdown(
 )
 
 # ------------------------------------------------------------------------------
+# 1b. PORTADA (se muestra antes de la demo)
+# ------------------------------------------------------------------------------
+if "entrar" not in st.session_state:
+    st.session_state.entrar = False
+
+if not st.session_state.entrar:
+    st.markdown(
+        f"""
+        <style>
+        @property --dbm {{ syntax: '<integer>'; initial-value: -100; inherits: false; }}
+        .stApp p.intro-titulo {{
+            font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700;
+            font-size: clamp(2.4rem, 5.2vw, 4.2rem); line-height: 1.04; letter-spacing: -0.02em;
+            margin: 1.2rem 0 .9rem 0;
+            background: linear-gradient(90deg, {VERDE} 0%, {VERDE} 42%, #C9D6CF 58%, #C9D6CF 100%);
+            background-size: 200% 100%; background-position: 0% 0;
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent !important; color: transparent !important;
+            animation: barrido 2.6s cubic-bezier(.22,.8,.3,1) both;
+        }}
+        @keyframes barrido {{ from {{ background-position: 100% 0; }} to {{ background-position: 0% 0; }} }}
+        .stApp p.intro-bajada {{
+            font-size: 1.2rem; color: #3E4C59 !important; max-width: 34rem; margin: 0 0 1.6rem 0;
+            animation: aparece .9s ease 1.5s both;
+        }}
+        @keyframes aparece {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
+        .ondas {{ position: relative; width: min(100%, 380px); aspect-ratio: 1; margin: 0 auto 3rem auto; }}
+        .onda {{
+            position: absolute; inset: 0; border: 3px solid {VERDE}; border-radius: 50%;
+            opacity: 0; transform: scale(.08);
+            animation: onda 3.9s cubic-bezier(.2,.6,.3,1) infinite;
+        }}
+        .onda:nth-child(2) {{ animation-delay: 1.3s; }}
+        .onda:nth-child(3) {{ animation-delay: 2.6s; }}
+        @keyframes onda {{ 0% {{ opacity: .85; transform: scale(.08); }} 100% {{ opacity: 0; transform: scale(1); }} }}
+        .centro {{
+            position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px;
+            background: {VERDE}; border-radius: 50%; box-shadow: 0 0 0 6px #FFFFFF, 0 0 0 9px {OCRE};
+        }}
+        .dbm {{
+            position: absolute; left: 0; right: 0; bottom: -2.6rem; text-align: center;
+            font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 1.7rem; color: {VERDE};
+            counter-reset: dbm var(--dbm); animation: sube 2.6s ease-out both;
+        }}
+        .dbm::after {{ content: counter(dbm) " dBm"; }}
+        @keyframes sube {{ from {{ --dbm: -100; }} to {{ --dbm: -45; }} }}
+        @media (prefers-reduced-motion: reduce) {{
+            .stApp p.intro-titulo, .stApp p.intro-bajada, .dbm {{ animation: none !important; }}
+            .onda {{ animation: none !important; opacity: .3; transform: scale(.55); }}
+            .onda:nth-child(2) {{ transform: scale(.8); opacity: .2; }}
+            .onda:nth-child(3) {{ transform: scale(1); opacity: .1; }}
+            .dbm {{ --dbm: -45; }}
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    izq, der = st.columns([3, 2], gap="large", vertical_alignment="center")
+    with izq:
+        if Path("image_4b1621.png").exists():
+            st.image("image_4b1621.png", width=150)
+        st.markdown(
+            "<p class='intro-titulo'>Tu señal Wi-Fi sabe en qué sala estás</p>"
+            "<p class='intro-bajada'>Localización en interiores con huellas de señal y un modelo k-NN, "
+            "probada en las 16 salas del Museo Nacional de Artes Visuales.</p>",
+            unsafe_allow_html=True,
+        )
+        boton, _ = st.columns([2, 3])
+        if boton.button("Entrar a la demo"):
+            st.session_state.entrar = True
+            st.rerun()
+    with der:
+        st.markdown(
+            "<div class='ondas'><div class='onda'></div><div class='onda'></div><div class='onda'></div>"
+            "<div class='centro'></div><div class='dbm'></div></div>",
+            unsafe_allow_html=True,
+        )
+    st.stop()
+
+# ------------------------------------------------------------------------------
 # 2. ENCABEZADO
 # ------------------------------------------------------------------------------
 col_logo, col_titulo = st.columns([1, 5], vertical_alignment="center")
@@ -247,6 +327,9 @@ else:  # Subir CSV
 
 st.sidebar.markdown("---")
 umbral = st.sidebar.slider("Alertar si la certeza es menor a", 10, 90, 40, format="%d %%")
+if st.sidebar.button("Volver a la portada"):
+    st.session_state.entrar = False
+    st.rerun()
 
 # ------------------------------------------------------------------------------
 # 5. PREDICCIÓN
