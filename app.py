@@ -170,20 +170,26 @@ if huella_input is not None:
             })
         df_mapa = pd.DataFrame(data_mapa)
 
+# Crear gráfico de dispersión con Plotly
         fig_mapa = px.scatter(
             df_mapa, x="X", y="Y", text="Zona", color="Estado", size="Tamaño",
             color_discrete_map={"Zona Detectada": "#005A36", "Otras Salas": "#CBD5E0"},
             title="🗺️ Distribución Espacial de Salas MNAV"
         )
-        fig_mapa.update_traces(textposition='top center', font=dict(size=12, color="black"))
+        
+        # Posicionar el texto arriba del punto (sin pasar font directamente a update_traces)
+        fig_mapa.update_traces(textposition='top center')
+        
+        # Configurar la fuente, tamaños y márgenes dentro de update_layout
         fig_mapa.update_layout(
             height=380,
+            font=dict(size=12, color="black"),
             xaxis=dict(visible=False, showgrid=False),
             yaxis=dict(visible=False, showgrid=False),
             margin=dict(l=20, r=20, t=40, b=20)
         )
+        
         st.plotly_chart(fig_mapa, use_container_width=True)
-
     # --------------------------------------------------------------------------
     # COLUMNA DERECHA: TACÓMETRO DE CONFIANZA Y BARRAS RSSI
     # --------------------------------------------------------------------------
