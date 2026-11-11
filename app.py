@@ -307,6 +307,82 @@ def plano(proba, pred, real):
     return fig
 
 
+def _posiciones():
+    n = len(CLASES)
+    ncols = 4 if n == 16 else int(np.ceil(np.sqrt(n)))
+    nrows = int(np.ceil(n / ncols))
+
+    def clave(i):
+        m = re.search(r"(\d+)$", CLASES[i])
+        return int(m.group(1)) if m else i
+
+    pos = {CLASES[i]: divmod(rank, ncols) for rank, i in enumerate(sorted(range(n), key=clave))}
+    return pos, nrows, ncols
+
+
+def _mezcla(p):
+    """Color entre gris verdoso claro (p=0) y el verde institucional (p=1)."""
+    a, b = np.array([0xDD, 0xE5, 0xE0]), np.array([0x00, 0x5A, 0x36])
+    r, g, bl = (a + (b - a) * p).round().astype(int)
+    return f"rgb({r},{g},{bl})"
+
+
+def plano_3d(proba, pred, real):
+    """Salas como prismas: altura y color = fracción de vecinos que votó por cada una."""
+    pos, nrows, ncols = _posiciones()
+    I = [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2]
+    J = [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3]
+    K = [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6]
+    fig = go.Figure()
+    alturas = {}
+    for i, zona in enumerate(CLASES):
+        r, c = pos[zona]
+        x, y = c, nrows - 1 - r
+        h = 0.06 + 1.2 * proba[i]
+        alturas[zona] = h
+        x0, x1, y0, y1 = x - .44, x + .44, y - .44, y + .44
+        fig.add_trace(
+            go.Mesh3d(
+                x=[x0, x1, x1, x0, x0, x1, x1, x0], y=[y0, y0, y1, y1, y0, y0, y1, y1],
+                z=[0, 0, 0, 0, h, h, h, h], i=I, j=J, k=K,
+                color=_mezcla(proba[i]), flatshading=True,
+                lighting=dict(ambient=.65, diffuse=.8, specular=.1),
+                hoverinfo="text", hovertext=f"{etq(zona)}: {proba[i] * 100:.0f} % de los vecinos",
+                showlegend=False,
+            )
+        )
+    fig.add_trace(
+        go.Scatter3d(
+            x=[pos[z][1] for z in CLASES], y=[nrows - 1 - pos[z][0] for z in CLASES],
+            z=[alturas[z] + .12 for z in CLASES], mode="text",
+            text=[etq(z) + (f" ({proba[i] * 100:.0f} %)" if proba[i] > 0 else "") for i, z in enumerate(CLASES)],
+            textfont=dict(size=12, color=TINTA), hoverinfo="skip", showlegend=False,
+        )
+    )
+    for zona, color, ancho in ((real, OCRE, 9), (pred, TINTA, 5)):
+        if zona in pos:
+            r, c = pos[zona]
+            x, y, h = c, nrows - 1 - r, alturas[zona] + .01
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[x - .44, x + .44, x + .44, x - .44, x - .44],
+                    y=[y - .44, y - .44, y + .44, y + .44, y - .44], z=[h] * 5,
+                    mode="lines", line=dict(color=color, width=ancho),
+                    hoverinfo="skip", showlegend=False,
+                )
+            )
+    oculto = dict(visible=False)
+    fig.update_layout(
+        height=470, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)",
+        scene=dict(
+            xaxis=oculto, yaxis=oculto, zaxis=dict(visible=False, range=[0, 2]),
+            aspectmode="manual", aspectratio=dict(x=ncols / 2.2, y=nrows / 2.2, z=.55),
+            camera=dict(eye=dict(x=0.1, y=-1.9, z=1.25)), bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    return fig
+
+
 def barras_zonas(proba, orden):
     top = orden[:3]
     fig = go.Figure(
@@ -352,8 +428,13 @@ with tab_loc:
     col_plano, col_info = st.columns([3, 2], gap="large")
 
     with col_plano:
-        st.plotly_chart(plano(proba, pred, zona_real), config={"displayModeBar": False}, **STRETCH)
-        leyenda = "Cada sala se colorea según la fracción de vecinos del k-NN que la eligió."
+        vista = st.radio("Vista del plano", ["3D", "2D"], horizontal=True, label_visibility="collapsed")
+        if vista == "3D":
+            st.plotly_chart(plano_3d(proba, pred, zona_real), config={"displayModeBar": False}, **STRETCH)
+            leyenda = "Arrastra para girar y usa la rueda para acercar. Altura y color indican la fracción de vecinos del k-NN que eligió cada sala."
+        else:
+            st.plotly_chart(plano(proba, pred, zona_real), config={"displayModeBar": False}, **STRETCH)
+            leyenda = "Cada sala se colorea según la fracción de vecinos del k-NN que la eligió."
         if zona_real:
             leyenda += " Contorno ocre: zona real. Contorno oscuro: zona estimada."
         st.caption(leyenda)
