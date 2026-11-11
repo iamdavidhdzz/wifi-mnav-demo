@@ -33,25 +33,73 @@ def _version():
 
 STRETCH = {"width": "stretch"} if _version() >= (1, 50) else {"use_container_width": True}
 
+
+AVISOS = {
+    "ok": ("#E3F2E9", VERDE, "#00402A"),
+    "error": ("#FBE6E3", ROJO, "#7A1913"),
+    "warn": ("#FCF0D4", OCRE, "#5E3F0D"),
+    "info": ("#E7EEF3", "#52606D", TINTA),
+}
+
+
+def aviso(tipo, texto):
+    """Mensaje con colores propios: se lee igual en tema claro u oscuro."""
+    fondo, borde, color = AVISOS[tipo]
+    st.markdown(
+        f"<div style='background:{fondo};border-left:5px solid {borde};padding:.7rem .95rem;"
+        f"border-radius:4px;margin:.4rem 0;color:{color} !important'>{texto}</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def tabla_html(df, alto=300):
+    html = df.to_html(index=False, border=0, classes="tabla", float_format=lambda v: f"{v:.0f}")
+    st.markdown(
+        f"<div class='tabla-wrap' style='max-height:{alto}px'>{html.replace(chr(10), '')}</div>",
+        unsafe_allow_html=True,
+    )
+
 st.markdown(
     f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap');
-    .stApp {{ font-family: 'Source Sans 3', sans-serif; color: {TINTA}; }}
-    h1, h2, h3, .zona-grande {{ font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: -0.01em; }}
+    :root {{ color-scheme: light; }}
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stHeader"] {{ background-color: #FFFFFF !important; }}
+    section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div {{ background-color: {PAPEL} !important; }}
+    section[data-testid="stSidebar"] {{ border-right: 1px solid #D9E2DC; }}
+    .stApp {{ font-family: 'Source Sans 3', sans-serif; }}
+    .stApp, .stApp p, .stApp li, .stApp label, .stApp span, .stApp h1, .stApp h2, .stApp h3, .stApp h4,
+    .stApp [data-testid="stMetricLabel"], .stApp [data-testid="stMetricValue"],
+    .stApp [data-testid="stCaptionContainer"], .stApp [data-testid="stWidgetLabel"] {{ color: {TINTA} !important; }}
+    h1, h2, h3 {{ font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: -0.01em; }}
     .block-container {{ padding-top: 2rem; max-width: 1200px; }}
-    section[data-testid="stSidebar"] {{ background: {PAPEL}; border-right: 1px solid #E0E8E3; }}
-    .titulo {{ font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700;
-               font-size: 2.1rem; line-height: 1.15; color: {VERDE}; margin: 0; }}
-    .bajada {{ color: #52606D; margin: .35rem 0 0 0; font-size: 1.05rem; }}
-    .zona-grande {{ font-size: 3.4rem; font-weight: 700; line-height: 1; color: {VERDE}; margin: .1rem 0 0 0; }}
-    .zona-grande.baja {{ color: {ROJO}; }}
-    .rotulo {{ font-size: .95rem; color: #52606D; margin: 0; }}
-    div[data-testid="stMetricValue"] {{ font-family: 'Bricolage Grotesque', sans-serif; }}
-    .stButton > button {{ background: {VERDE}; color: white; border: 0; border-radius: 6px; font-weight: 600; width: 100%; }}
-    .stButton > button:hover {{ background: #00422A; color: white; }}
-    .stButton > button:focus-visible {{ outline: 3px solid {OCRE}; outline-offset: 2px; }}
-    </style>
+    .stApp p.titulo {{ font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 2.1rem;
+                       line-height: 1.15; color: {VERDE} !important; margin: 0; }}
+    .stApp p.bajada {{ color: #3E4C59 !important; margin: .35rem 0 0 0; font-size: 1.05rem; }}
+    .stApp p.zona-grande {{ font-family: 'Bricolage Grotesque', sans-serif; font-size: 3.4rem; font-weight: 700;
+                            line-height: 1; color: {VERDE} !important; margin: .1rem 0 0 0; }}
+    .stApp p.zona-grande.baja {{ color: {ROJO} !important; }}
+    .stApp p.rotulo {{ font-size: .95rem; color: #3E4C59 !important; margin: 0; }}
+    .stApp [data-testid="stMetricValue"] {{ font-family: 'Bricolage Grotesque', sans-serif; }}
+    .stApp [data-testid="stSliderThumbValue"] {{ color: {VERDE} !important; }}
+    .stApp [data-baseweb="slider"] [role="slider"] {{ background-color: {VERDE} !important; }}
+    .stApp button[data-baseweb="tab"][aria-selected="true"] p {{ color: {VERDE} !important; font-weight: 600; }}
+    .stApp [data-baseweb="tab-highlight"] {{ background-color: {VERDE} !important; }}
+    .stApp .stButton > button, .stApp .stDownloadButton > button {{
+        background-color: {VERDE} !important; border: 0; border-radius: 6px; width: 100%; }}
+    .stApp .stButton > button:hover, .stApp .stDownloadButton > button:hover {{ background-color: #00422A !important; }}
+    .stApp .stButton > button p, .stApp .stDownloadButton > button p {{ color: #FFFFFF !important; font-weight: 600; }}
+    .stApp .stButton > button:focus-visible, .stApp .stDownloadButton > button:focus-visible {{
+        outline: 3px solid {OCRE}; outline-offset: 2px; }}
+    .stApp [data-baseweb="select"] > div {{ background-color: #FFFFFF !important; border: 1px solid #BFCBC5 !important; }}
+    .stApp [data-baseweb="select"] * {{ color: {TINTA} !important; }}
+    .stApp [data-testid="stFileUploaderDropzone"] {{ background-color: #FFFFFF !important; border: 1px dashed {VERDE_SUAVE}; }}
+    .stApp [data-testid="stFileUploaderDropzone"] button {{ background-color: #FFFFFF !important; border: 1px solid #BFCBC5 !important; }}
+    .tabla-wrap {{ overflow: auto; border: 1px solid #D9E2DC; border-radius: 6px; }}
+    .tabla {{ width: 100%; border-collapse: collapse; font-size: .95rem; }}
+    .tabla th {{ position: sticky; top: 0; background: {PAPEL}; color: {TINTA}; text-align: left; padding: .4rem .7rem; }}
+    .tabla td {{ color: {TINTA}; padding: .35rem .7rem; border-top: 1px solid #E6ECE8; }}
+        </style>
     """,
     unsafe_allow_html=True,
 )
@@ -91,13 +139,13 @@ try:
     model, scaler = cargar_modelo()
     df_ref = cargar_huellas()
 except FileNotFoundError as e:
-    st.error(
-        f"No se encontró el archivo `{e.filename}`. Deja `modelo_knn.pkl`, `escalador.pkl` "
-        "y `ejemplos_huellas.csv` en la misma carpeta que `app.py`."
+    aviso("error", 
+        f"No se encontró el archivo <code>{e.filename}</code>. Deja <code>modelo_knn.pkl</code>, <code>escalador.pkl</code> "
+        "y <code>ejemplos_huellas.csv</code> en la misma carpeta que <code>app.py</code>."
     )
     st.stop()
 except Exception as e:
-    st.error(f"No se pudo cargar el modelo: {e}")
+    aviso("error", f"No se pudo cargar el modelo: {e}")
     st.stop()
 
 AP_COLS = [c for c in df_ref.columns if c.startswith("AP_")]
@@ -173,16 +221,16 @@ elif modo == "Simulación con ruido":
 else:  # Subir CSV
     archivo = st.sidebar.file_uploader("CSV con columnas AP_…", type=["csv"])
     if archivo is None:
-        st.info("Sube un CSV con columnas `AP_…` en la barra lateral para ubicar una huella.")
+        aviso("info", "Sube un CSV con columnas <code>AP_…</code> en la barra lateral para ubicar una huella.")
         st.stop()
     try:
         df_sub = pd.read_csv(archivo)
     except Exception as e:
-        st.error(f"No se pudo leer el archivo: {e}")
+        aviso("error", f"No se pudo leer el archivo: {e}")
         st.stop()
     presentes = [c for c in FEATURES if c in df_sub.columns]
     if not presentes:
-        st.error("El CSV no tiene ninguna de las columnas `AP_…` que usa el modelo.")
+        aviso("error", "El CSV no tiene ninguna de las columnas <code>AP_…</code> que usa el modelo.")
         st.stop()
     st.sidebar.caption(
         f"{len(presentes)} de {len(FEATURES)} APs encontrados. "
@@ -322,17 +370,17 @@ with tab_loc:
         m2.metric("APs detectados", f"{n_detectados} de {len(FEATURES)}")
 
         if n_detectados == 0:
-            st.error("El dispositivo no detecta ningún AP: está fuera de cobertura.")
+            aviso("error", "El dispositivo no detecta ningún AP: está fuera de cobertura.")
         elif baja:
-            st.error(
+            aviso("error", 
                 "Certeza baja. El dispositivo puede estar fuera de cobertura "
                 "o en una zona que el modelo no calibró."
             )
         if zona_real:
             if pred == zona_real:
-                st.success(f"Acierto: la zona real es {etq(zona_real)}.")
+                aviso("ok", f"Acierto: la zona real es {etq(zona_real)}.")
             else:
-                st.warning(f"Error: la zona real es {etq(zona_real)} y el modelo estimó {etq(pred)}.")
+                aviso("warn", f"Error: la zona real es {etq(zona_real)} y el modelo estimó {etq(pred)}.")
 
         st.markdown("**Zonas más probables**")
         st.plotly_chart(barras_zonas(proba, orden), config={"displayModeBar": False}, **STRETCH)
@@ -344,15 +392,12 @@ with tab_huella:
         if n_detectados:
             st.plotly_chart(barras_aps(huella), config={"displayModeBar": False}, **STRETCH)
         else:
-            st.info("No hay APs detectados en esta huella.")
+            aviso("info", "No hay APs detectados en esta huella.")
     with c2:
         st.markdown("**Todos los APs detectados**")
         det = huella.iloc[0]
         det = det[det > SIN_SENAL].sort_values(ascending=False)
-        st.dataframe(
-            det.rename("RSSI (dBm)").rename_axis("Access Point").reset_index(),
-            hide_index=True, height=300, **STRETCH,
-        )
+        tabla_html(det.rename("RSSI (dBm)").rename_axis("Access Point").reset_index(), 300)
 
     if lote is not None and len(lote) > 1:
         st.markdown("---")
@@ -369,7 +414,7 @@ with tab_huella:
             if lote_real is not None:
                 res["zona_real"] = lote_real.values
                 st.metric("Exactitud en el archivo", f"{(res.zona_real == res.zona_estimada).mean() * 100:.1f} %")
-            st.dataframe(res, hide_index=True, height=300, **STRETCH)
+            tabla_html(res, 300)
             st.download_button(
                 "Descargar resultados (CSV)", res.to_csv(index=False).encode("utf-8"),
                 file_name="localizacion_resultados.csv", mime="text/csv",
@@ -392,9 +437,10 @@ calibrada, por eso toma valores discretos (con k = 5, de 20 en 20 %).
 con el orden distinto o con APs faltantes no desplaza los datos.
 """
     )
-    st.info(
-        "**Límites del modelo**\n\n"
-        "- La exactitud depende de la sensibilidad del receptor del dispositivo.\n"
-        "- Personas, tabiques y el estado de los APs cambian la señal.\n"
-        "- Solo cubre las 16 regiones anonimizadas del museo."
+    aviso(
+        "info",
+        "<b>Límites del modelo</b><ul style='margin:.3rem 0 0 1.1rem;padding:0'>"
+        "<li>La exactitud depende de la sensibilidad del receptor del dispositivo.</li>"
+        "<li>Personas, tabiques y el estado de los APs cambian la señal.</li>"
+        "<li>Solo cubre las 16 regiones anonimizadas del museo.</li></ul>",
     )
