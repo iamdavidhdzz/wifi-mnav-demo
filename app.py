@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 
 # ------------------------------------------------------------------------------
 # 1. CONFIGURACIÓN E IDENTIDAD VISUAL
@@ -454,16 +455,71 @@ def plano_3d(proba, pred, real):
                     hoverinfo="skip", showlegend=False,
                 )
             )
+    if pred in pos:
+        r_p, c_p = pos[pred]
+        cx, cy, cz = c_p, nrows - 1 - r_p, alturas[pred] + .03
+        pasos = 48
+        th = np.linspace(0, 2 * np.pi, 73)
+
+        def anillo(k, f):
+            fase = (f / pasos + k / 3) % 1
+            rad = .1 + fase * 3.4
+            return dict(
+                x=cx + rad * np.cos(th), y=cy + rad * np.sin(th), z=np.full_like(th, cz),
+                opacity=float(.9 * (1 - fase) ** 1.3),
+            )
+
+        idx = []
+        for k in range(3):
+            d = anillo(k, 0)
+            idx.append(len(fig.data))
+            fig.add_trace(
+                go.Scatter3d(
+                    **d, mode="lines", line=dict(color=VERDE, width=6),
+                    hoverinfo="skip", showlegend=False,
+                )
+            )
+        fig.add_trace(
+            go.Scatter3d(
+                x=[cx], y=[cy], z=[cz + .1], mode="markers",
+                marker=dict(size=7, color=VERDE, line=dict(color=OCRE, width=4)),
+                hoverinfo="skip", showlegend=False,
+            )
+        )
+        fig.frames = [
+            go.Frame(name=str(f), traces=idx, data=[go.Scatter3d(**anillo(k, f)) for k in range(3)])
+            for f in range(pasos)
+        ]
     oculto = dict(visible=False)
     fig.update_layout(
         height=470, margin=dict(l=0, r=0, t=0, b=0), paper_bgcolor="rgba(0,0,0,0)",
         scene=dict(
-            xaxis=oculto, yaxis=oculto, zaxis=dict(visible=False, range=[0, 2]),
+            xaxis=dict(visible=False, range=[-.5, ncols - .5]), yaxis=dict(visible=False, range=[-.5, nrows - .5]),
+            zaxis=dict(visible=False, range=[0, 2]),
             aspectmode="manual", aspectratio=dict(x=ncols / 2.2, y=nrows / 2.2, z=.55),
             camera=dict(eye=dict(x=0.1, y=-1.9, z=1.25)), bgcolor="rgba(0,0,0,0)",
         ),
     )
     return fig
+
+
+POST_BUCLE = """
+var gd = document.getElementById('{plot_id}');
+var opts = {frame: {duration: 70, redraw: true}, transition: {duration: 0}, mode: 'immediate'};
+if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    gd.on('plotly_animated', function () { Plotly.animate(gd, null, opts); });
+}
+"""
+
+
+def html_3d(fig):
+    """HTML de Plotly con autoplay en bucle (st.plotly_chart no reproduce frames)."""
+    cuerpo = fig.to_html(
+        include_plotlyjs="cdn", full_html=False, auto_play=True, post_script=POST_BUCLE,
+        config={"displayModeBar": False, "responsive": True},
+        animation_opts=dict(frame=dict(duration=70, redraw=True), transition=dict(duration=0), mode="immediate"),
+    )
+    return "<style>body{margin:0;background:transparent}</style>" + cuerpo
 
 
 def barras_zonas(proba, orden):
@@ -513,8 +569,8 @@ with tab_loc:
     with col_plano:
         vista = st.radio("Vista del plano", ["3D", "2D"], horizontal=True, label_visibility="collapsed")
         if vista == "3D":
-            st.plotly_chart(plano_3d(proba, pred, zona_real), config={"displayModeBar": False}, **STRETCH)
-            leyenda = "Arrastra para girar y usa la rueda para acercar. Altura y color indican la fracción de vecinos del k-NN que eligió cada sala."
+            components.html(html_3d(plano_3d(proba, pred, zona_real)), height=480)
+            leyenda = "Las ondas parten de la sala estimada. Arrastra para girar y usa la rueda para acercar. Altura y color indican la fracción de vecinos del k-NN que eligió cada sala."
         else:
             st.plotly_chart(plano(proba, pred, zona_real), config={"displayModeBar": False}, **STRETCH)
             leyenda = "Cada sala se colorea según la fracción de vecinos del k-NN que la eligió."
